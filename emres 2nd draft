@@ -1,0 +1,329 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+import sqlite3
+from datetime import datetime
+
+
+class TaskModel:
+    def __init__(self, db_name="smart_tasks.db"):
+        self.conn = sqlite3.connect(db_name)
+        self.create_table()
+
+    def create_table(self):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_name TEXT NOT NULL,
+                subject TEXT,
+                deadline TEXT,
+                priority TEXT,
+                status TEXT
+            )
+        ''')
+        self.conn.commit()
+
+    def add_task(self, name, subject, deadline, priority, status):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            INSERT INTO tasks (task_name, subject, deadline, priority, status)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (name, subject, deadline, priority, status))
+        self.conn.commit()
+
+    def update_task(self, task_id, name, subject, deadline, priority, status):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            UPDATE tasks SET task_name=?, subject=?, deadline=?, priority=?, status=?
+            WHERE id=?
+        ''', (name, subject, deadline, priority, status, task_id))
+        self.conn.commit()
+
+    def delete_task(self, task_id):
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM tasks WHERE id=?", (task_id,))
+        self.conn.commit()
+
+    def get_tasks(self, status_filter="All", priority_filter="All"):
+        cursor = self.conn.cursor()
+        query = "SELECT * FROM tasks WHERE 1=1"
+        params = []
+        
+        if status_filter != "All":
+            query += " AND status=?"
+            params.append(status_filter)
+        if priority_filter != "All":
+            query += " AND priority=?"
+            params.append(priority_filter)
+            
+        query += " ORDER BY deadline ASC"
+        cursor.execute(query, params)
+        return cursor.fetchall()
+
+
+class TaskView(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Smart-Task Academic Manager")
+        self.geometry("850x650")
+        
+        self.configure(padx=20, pady=20)
+        self.build_ui()
+
+    def build_ui(self):
+        # --- DASHBOARD (Summary View) ---
+        dash_frame = ttk.LabelFrame(self, text="Dashboard Summary")
+        dash_frame.pack(fill="x", pady=(0, 15), ipadx=10, ipady=10)
+        
+        self.lbl_total = ttk.Label(dash_frame, text="Total Tasks: 0", font=("Garamond", 12))
+        self.lbl_total.grid(row=0, column=0, padx=20)
+        
+        self.lbl_completed = ttk.Label(dash_frame, text="Completed: 0", font=("Garamond", 12))
+        self.lbl_completed.grid(row=0, column=1, padx=20)
+        
+        # Updated Label for the Live Countdown
+        self.lbl_countdown = ttk.Label(dash_frame, text="Time left until next deadline: None", font=("Garamond", 12, "bold"))
+        self.lbl_countdown.grid(row=0, column=2, padx=20)
+
+        # --- INPUT FORM (Task Management) ---
+        form_frame = ttk.LabelFrame(self, text="Task Management")
+        form_frame.pack(fill="x", pady=10, ipadx=10, ipady=10)
+        
+        labels = ["Task Name:", "Subject:", "Deadline (YYYY-MM-DD):", "Priority:", "Status:"]
+        for i, text in enumerate(labels):
+            ttk.Label(form_frame, text=text, font=("Garamond", 11, "bold")).grid(row=0, column=i, padx=5, pady=5)
+
+        self.ent_name = ttk.Entry(form_frame)
+        self.ent_name.grid(row=1, column=0, padx=5, pady=5)
+        
+        self.ent_subject = ttk.Entry(form_frame)
+        self.ent_subject.grid(row=1, column=1, padx=5, pady=5)
+        
+        self.ent_deadline = ttk.Entry(form_frame)
+        self.ent_deadline.grid(row=1, column=2, padx=5, pady=5)
+        
+        self.cbo_priority = ttk.Combobox(form_frame, values=["Low", "Medium", "High"], state="readonly", width=10)
+        self.cbo_priority.set("Medium")
+        self.cbo_priority.grid(row=1, column=3, padx=5, pady=5)
+        
+        self.cbo_status = ttk.Combobox(form_frame, values=["Pending", "Completed"], state="readonly", width=10)
+        self.cbo_status.set("Pending")
+        self.cbo_status.grid(row=1, column=4, padx=5, pady=5)
+
+        # Buttons (CRUD Actions)
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(pady=10)
+        
+        self.btn_add = ttk.Button(btn_frame, text="Add Task")
+        self.btn_add.grid(row=0, column=0, padx=5)
+        
+        self.btn_update = ttk.Button(btn_frame, text="Update Selected")
+        self.btn_update.grid(row=0, column=1, padx=5)
+        
+        self.btn_delete = ttk.Button(btn_frame, text="Delete Selected")
+        self.btn_delete.grid(row=0, column=2, padx=5)
+        
+        self.btn_clear = ttk.Button(btn_frame, text="Clear Form")
+        self.btn_clear.grid(row=0, column=3, padx=5)
+
+        # --- SEARCH & FILTER ---
+        filter_frame = ttk.Frame(self)
+        filter_frame.pack(fill="x", pady=5)
+        
+        ttk.Label(filter_frame, text="Filter By Status:").pack(side="left")
+        self.filter_status = ttk.Combobox(filter_frame, values=["All", "Pending", "Completed"], state="readonly", width=10)
+        self.filter_status.set("All")
+        self.filter_status.pack(side="left", padx=5)
+        
+        ttk.Label(filter_frame, text="Filter By Priority:").pack(side="left", padx=(15, 0))
+        self.filter_priority = ttk.Combobox(filter_frame, values=["All", "Low", "Medium", "High"], state="readonly", width=10)
+        self.filter_priority.set("All")
+        self.filter_priority.pack(side="left", padx=5)
+
+        # --- TASK LIST (Treeview) ---
+        columns = ("ID", "Name", "Subject", "Deadline", "Priority", "Status")
+        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=10)
+        
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=130, anchor="center")
+            
+        self.tree.column("ID", width=0, stretch=tk.NO)
+        
+        self.tree.tag_configure("urgent", foreground="red")
+        self.tree.tag_configure("completed", foreground="darkgreen")
+
+        self.tree.pack(fill="both", expand=True, pady=10)
+
+    def clear_inputs(self):
+        self.ent_name.delete(0, tk.END)
+        self.ent_subject.delete(0, tk.END)
+        self.ent_deadline.delete(0, tk.END)
+        self.cbo_priority.set("Medium")
+        self.cbo_status.set("Pending")
+
+class TaskController:
+    def __init__(self, model, view):
+        self.model = model
+        self.view = view
+        
+        # State variable to hold the closest deadline for the countdown
+        self.closest_deadline_dt = None
+
+        self.view.btn_add.config(command=self.add_task)
+        self.view.btn_update.config(command=self.update_task)
+        self.view.btn_delete.config(command=self.delete_task)
+        self.view.btn_clear.config(command=self.view.clear_inputs)
+        
+        self.view.filter_status.bind("<<ComboboxSelected>>", lambda e: self.refresh_list())
+        self.view.filter_priority.bind("<<ComboboxSelected>>", lambda e: self.refresh_list())
+        
+        self.view.tree.bind("<Double-1>", self.load_selected_to_form)
+
+        self.refresh_list()
+        
+        # Start the live countdown loop
+        self.update_countdown()
+
+    def update_countdown(self):
+        """Calculates the time left and updates the label every 1 second."""
+        if self.closest_deadline_dt:
+            now = datetime.now()
+            time_diff = self.closest_deadline_dt - now
+
+            if time_diff.total_seconds() < 0:
+                self.view.lbl_countdown.config(text="Time left until next deadline: OVERDUE!", foreground="red")
+            else:
+                # Calculate days, hours, minutes, seconds
+                days = time_diff.days
+                seconds = time_diff.seconds
+                hours = seconds // 3600
+                minutes = (seconds % 3600) // 60
+                secs = seconds % 60
+                
+                countdown_str = f"{days}d {hours}h {minutes}m {secs}s"
+                
+                # Turn text red if due in less than 2 days
+                color = "red" if days <= 2 else ""
+                
+                self.view.lbl_countdown.config(text=f"Time left until next deadline: {countdown_str}", foreground=color)
+        else:
+            self.view.lbl_countdown.config(text="Time left until next deadline: None", foreground="")
+            
+        # Tell Tkinter to run this exact function again in 1000ms (1 second)
+        self.view.after(1000, self.update_countdown)
+
+    def validate_date(self, date_text):
+        try:
+            datetime.strptime(date_text, '%Y-%m-%d')
+            return True
+        except ValueError:
+            return False
+
+    def add_task(self):
+        name = self.view.ent_name.get().strip()
+        subject = self.view.ent_subject.get().strip()
+        deadline = self.view.ent_deadline.get().strip()
+        priority = self.view.cbo_priority.get()
+        status = self.view.cbo_status.get()
+
+        if not name or not deadline:
+            messagebox.showerror("Error", "Name and Deadline are required!")
+            return
+        if not self.validate_date(deadline):
+            messagebox.showerror("Error", "Deadline must be YYYY-MM-DD format!")
+            return
+
+        self.model.add_task(name, subject, deadline, priority, status)
+        self.view.clear_inputs()
+        self.refresh_list()
+
+    def update_task(self):
+        selected = self.view.tree.selection()
+        if not selected:
+            messagebox.showwarning("Warning", "Double-click a task in the list first to select it.")
+            return
+
+        task_id = self.view.tree.item(selected[0])['values'][0]
+        name = self.view.ent_name.get().strip()
+        subject = self.view.ent_subject.get().strip()
+        deadline = self.view.ent_deadline.get().strip()
+        priority = self.view.cbo_priority.get()
+        status = self.view.cbo_status.get()
+
+        if not name or not self.validate_date(deadline):
+            messagebox.showerror("Error", "Valid Name and Deadline (YYYY-MM-DD) required!")
+            return
+
+        self.model.update_task(task_id, name, subject, deadline, priority, status)
+        self.view.clear_inputs()
+        self.refresh_list()
+
+    def delete_task(self):
+        selected = self.view.tree.selection()
+        if not selected:
+            messagebox.showwarning("Warning", "Select a task to delete.")
+            return
+
+        if messagebox.askyesno("Confirm", "Are you sure you want to delete this task?"):
+            task_id = self.view.tree.item(selected[0])['values'][0]
+            self.model.delete_task(task_id)
+            self.refresh_list()
+
+    def load_selected_to_form(self, event):
+        selected = self.view.tree.selection()
+        if selected:
+            values = self.view.tree.item(selected[0])['values']
+            self.view.clear_inputs()
+            self.view.ent_name.insert(0, values[1])
+            self.view.ent_subject.insert(0, values[2])
+            self.view.ent_deadline.insert(0, values[3])
+            self.view.cbo_priority.set(values[4])
+            self.view.cbo_status.set(values[5])
+
+    def refresh_list(self):
+        for item in self.view.tree.get_children():
+            self.view.tree.delete(item)
+            
+        status_f = self.view.filter_status.get()
+        priority_f = self.view.filter_priority.get()
+        tasks = self.model.get_tasks(status_f, priority_f)
+        
+        today = datetime.now()
+        total = len(tasks)
+        completed_count = 0
+        upcoming_deadlines = []
+
+        for task in tasks:
+            task_id, name, subject, deadline_str, priority, status = task
+            tag = ""
+            
+            if status == "Completed":
+                tag = "completed"
+                completed_count += 1
+            else:
+                task_date = datetime.strptime(deadline_str, '%Y-%m-%d')
+                upcoming_deadlines.append(task_date)
+                days_left = (task_date - today).days
+                if days_left <= 2: 
+                    tag = "urgent"
+
+            self.view.tree.insert("", tk.END, values=task, tags=(tag,) if tag else ())
+
+        self.view.lbl_total.config(text=f"Total Tasks: {total}")
+        self.view.lbl_completed.config(text=f"Completed: {completed_count}")
+        
+        # Identify the closest deadline and save it so the countdown function can use it
+        if upcoming_deadlines:
+            next_due_date = min(upcoming_deadlines)
+            # Set the deadline time to 23:59:59 (End of the day)
+            self.closest_deadline_dt = next_due_date.replace(hour=23, minute=59, second=59)
+        else:
+            self.closest_deadline_dt = None
+
+
+if __name__ == "__main__":
+    db = TaskModel()
+    app = TaskView()
+    controller = TaskController(db, app)
+    app.mainloop()
