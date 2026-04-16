@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
 
-# ---------- DATA ----------
+# ---------- data storage ----------
 tasks = []
 
-# ---------- FUNCTIONS ----------
+# ---------- code functions ----------
 def add_task():
     task = entry.get().strip()
     if task == "":
@@ -48,7 +48,7 @@ def load_selected(event):
         entry.delete(0, tk.END)
         entry.insert(0, tasks[index])
 
-# ---------- MOVE TASK ----------
+# ---------- move tasks ----------
 def move_up():
     selection = listbox.curselection()
     if not selection or selection[0] == 0:
@@ -67,7 +67,7 @@ def move_down():
     update_list()
     listbox.selection_set(i+1)
 
-# ---------- RIGHT CLICK MENU ----------
+# ---------- menu for right click ----------
 def show_menu(event):
     try:
         index = listbox.nearest(event.y)
@@ -79,7 +79,7 @@ def show_menu(event):
     finally:
         menu.grab_release()
 
-# ---------- GUI ----------
+# ---------- gui variables ----------
 root = tk.Tk()
 root.title("Manage ur tasks")
 root.geometry("480x560")
