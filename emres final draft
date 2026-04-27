@@ -1,8 +1,8 @@
+import customtkinter as ctk
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
 from datetime import datetime
-
 
 class TaskModel:
     def __init__(self, db_name="smart_tasks.db"):
@@ -44,7 +44,7 @@ class TaskModel:
         cursor.execute("DELETE FROM tasks WHERE id=?", (task_id,))
         self.conn.commit()
 
-    def get_tasks(self, status_filter="All", priority_filter="All", search_term=""):
+    def get_tasks(self, status_filter="All", priority_filter="All", search_term="", sort_by="Deadline"):
         cursor = self.conn.cursor()
         query = "SELECT * FROM tasks WHERE 1=1"
         params = []
@@ -59,158 +59,166 @@ class TaskModel:
             query += " AND task_name LIKE ?"
             params.append(f"%{search_term}%")
             
-        query += " ORDER BY deadline ASC"
+        if sort_by == "Priority (High to Low)":
+            query += " ORDER BY CASE priority WHEN 'High' THEN 3 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 1 END DESC, deadline ASC"
+        elif sort_by == "Priority (Low to High)":
+            query += " ORDER BY CASE priority WHEN 'High' THEN 3 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 1 END ASC, deadline ASC"
+        else:
+            query += " ORDER BY deadline ASC"
+            
         cursor.execute(query, params)
         return cursor.fetchall()
 
 
-class TaskView(tk.Tk):
+class TaskView(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title(" Task Manager")
-        self.geometry("1000x750")
+        
+        ctk.set_appearance_mode("light")  
+        
+        self.title("Smart-Task Academic Manager")
+        self.geometry("1100x800")
         
         
         self.bg_sand = "#E8DCC4"       
+        self.card_bg = "#FFFFFF"       
         self.rolex_green = "#006039"   
-        self.rolex_gold = "#B59A5A"    
-        self.dark_cyan = "#006039"     
+        self.rolex_gold = "#B59A5A" 
+        self.rolex_hover = "#004528"   
+        self.dark_cyan = "#008B8B"     
         self.burgundy = "#800020"      
-        self.list_bg = "#F5EBD4"       
-        self.entry_bg = "#E2E1E1"     
-        self.text_dark = "#2D2828"
+        self.entry_bg = "#F2F2F2"      
+        self.text_dark = "#111111"
         
+        self.row_even = "#FAFAFA"
+        self.row_odd = "#F0F0F0" 
         
-        self.row_light_sand = "#F5EEDC"
-        self.row_light_grey = "#D3D3D3" 
-        
-        self.configure(bg=self.bg_sand, padx=20, pady=20)
-        self.setup_premium_style()
+        self.configure(fg_color=self.bg_sand)
+        self.setup_treeview_style()
         self.build_ui()
 
-    def setup_premium_style(self):
+    def setup_treeview_style(self):
         style = ttk.Style()
         style.theme_use('clam') 
-        
-        style.configure(".", font=("Garamond", 12, "bold"), background=self.bg_sand, foreground=self.rolex_green)
-        style.configure("TLabel", background=self.bg_sand, foreground=self.rolex_green)
-        style.configure("TLabelframe", background=self.bg_sand, bordercolor=self.rolex_green)
-        
-        
-        style.configure("TLabelframe.Label", font=("Garamond", 18, "bold"), foreground=self.rolex_green, background=self.bg_sand)
-        
-        
-        style.configure("TButton", background=self.rolex_green, foreground=self.rolex_gold, font=("Garamond", 14, "bold"), borderwidth=0)
-        style.map("TButton", 
-                  background=[("active", self.rolex_gold)], 
-                  foreground=[("active", self.rolex_green)]) 
-        
-        style.configure("TCombobox", fieldbackground=self.list_bg, foreground="black")
-        
-        style.configure("Grey.TEntry", fieldbackground=self.entry_bg, foreground="black")
-        
-        
-        style.configure("Treeview", background=self.list_bg, fieldbackground=self.list_bg, foreground=self.text_dark, rowheight=28, font=("Garamond", 12, "bold"))
-        style.configure("Treeview.Heading", background=self.rolex_green, foreground=self.rolex_gold, font=("Garamond", 14, "bold"))
-        style.map("Treeview", background=[("selected", self.rolex_gold)], foreground=[("selected", self.list_bg)])
+        style.configure("Treeview", background=self.card_bg, fieldbackground=self.card_bg, foreground=self.text_dark, rowheight=32, font=("Garamond", 13, "bold"), borderwidth=0)
+        style.configure("Treeview.Heading", background=self.rolex_green, foreground=self.rolex_gold, font=("Garamond", 15, "bold"), borderwidth=0)
+        style.map("Treeview", background=[("selected", self.rolex_gold)], foreground=[("selected", self.card_bg)])
 
     def build_ui(self):
+        main_container = ctk.CTkFrame(self, fg_color=self.bg_sand)
+        main_container.pack(fill="both", expand=True, padx=25, pady=25)
+
         
-        header_frame = tk.Frame(self, bg=self.rolex_green, bd=2, relief="solid")
-        header_frame.pack(fill="x", pady=(0, 15), ipadx=10, ipady=5)
+        header_frame = ctk.CTkFrame(main_container, fg_color=self.rolex_green, corner_radius=25)
+        header_frame.pack(fill="x", pady=(0, 20), ipadx=15, ipady=10)
         
-        tk.Label(header_frame, text=" TASK MASTER ", font=("Garamond", 26, "bold"), fg=self.rolex_gold, bg=self.rolex_green).pack(side="left")
+        ctk.CTkLabel(header_frame, text="SMART-TASK", font=("Garamond", 28, "bold"), text_color=self.rolex_gold).pack(side="left", padx=20)
         
-        search_frame = tk.Frame(header_frame, bg=self.rolex_green)
+        search_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
         search_frame.pack(side="right", padx=10)
-        tk.Label(search_frame, text="Search Task:", font=("Garamond", 15, "bold"), fg=self.rolex_gold, bg=self.rolex_green).pack(side="left", padx=5)
-        
-        
-        self.ent_search = ttk.Entry(search_frame, width=25, font=("Garamond", 12, "bold"), style="Grey.TEntry")
+        ctk.CTkLabel(search_frame, text="Search Task:", font=("Garamond", 15, "bold"), text_color=self.rolex_gold).pack(side="left", padx=10)
+        self.ent_search = ctk.CTkEntry(search_frame, width=200, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, border_width=0, corner_radius=15)
         self.ent_search.pack(side="left")
 
         
-        dash_frame = ttk.LabelFrame(self, text=" Dashboard Summary ")
-        dash_frame.pack(fill="x", pady=(0, 15), ipadx=10, ipady=10)
+        dash_card = ctk.CTkFrame(main_container, fg_color=self.card_bg, corner_radius=25)
+        dash_card.pack(fill="x", pady=(0, 20), ipadx=20, ipady=15)
         
+      
+        ctk.CTkLabel(dash_card, text="Dashboard Summary", font=("Garamond", 22, "bold"), text_color=self.rolex_green).pack(pady=(0, 15))
         
-        self.lbl_total = ttk.Label(dash_frame, text="Total Tasks: 0", font=("Garamond", 15, "bold"))
-        self.lbl_total.grid(row=0, column=0, padx=20)
+        stats_frame = ctk.CTkFrame(dash_card, fg_color="transparent")
+        stats_frame.pack(fill="x")
         
-        self.lbl_completed = ttk.Label(dash_frame, text="Completed: 0", font=("Garamond", 15, "bold"))
-        self.lbl_completed.grid(row=0, column=1, padx=20)
+        self.lbl_total = ctk.CTkLabel(stats_frame, text="Total Tasks: 0", font=("Garamond", 16, "bold"), text_color=self.text_dark)
+        self.lbl_total.pack(side="left", expand=True)
         
-        self.lbl_countdown = ttk.Label(dash_frame, text="Time left until next deadline: None", font=("Garamond", 15, "bold"))
-        self.lbl_countdown.grid(row=0, column=2, padx=20)
+        self.lbl_completed = ctk.CTkLabel(stats_frame, text="Completed: 0", font=("Garamond", 16, "bold"), text_color=self.text_dark)
+        self.lbl_completed.pack(side="left", expand=True)
+        
+        self.lbl_countdown = ctk.CTkLabel(stats_frame, text="Next deadline: None", font=("Garamond", 16, "bold"), text_color=self.text_dark)
+        self.lbl_countdown.pack(side="left", expand=True)
 
+        form_card = ctk.CTkFrame(main_container, fg_color=self.card_bg, corner_radius=25)
+        form_card.pack(fill="x", pady=(0, 20), ipadx=20, ipady=15)
         
-        form_frame = ttk.LabelFrame(self, text=" Task Management ")
-        form_frame.pack(fill="x", pady=10, ipadx=10, ipady=10)
+        ctk.CTkLabel(form_card, text="Task Management", font=("Garamond", 22, "bold"), text_color=self.rolex_green).pack(pady=(0, 15))
         
-        labels = ["Task Name:", "Subject:", "Deadline (DD-MM-YYYY):", "Priority:", "Status:"]
+        center_input_frame = ctk.CTkFrame(form_card, fg_color="transparent")
+        center_input_frame.pack()
+        
+        
+        labels = ["Task Name", "Subject", "Deadline (DD-MM-YYYY)", "Priority", "Status"]
         for i, text in enumerate(labels):
-            ttk.Label(form_frame, text=text, font=("Garamond", 15, "bold")).grid(row=0, column=i, padx=5, pady=5)
+            ctk.CTkLabel(center_input_frame, text=text, font=("Garamond", 15, "bold"), text_color=self.rolex_green).grid(row=0, column=i, padx=10, pady=(0, 5))
 
+        self.ent_name = ctk.CTkEntry(center_input_frame, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, border_width=0, corner_radius=15, width=150)
+        self.ent_name.grid(row=1, column=0, padx=10)
         
-        self.ent_name = ttk.Entry(form_frame, font=("Garamond", 13, "bold"), style="Grey.TEntry")
-        self.ent_name.grid(row=1, column=0, padx=5, pady=5)
+        self.ent_subject = ctk.CTkEntry(center_input_frame, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, border_width=0, corner_radius=15, width=150)
+        self.ent_subject.grid(row=1, column=1, padx=10)
         
-        self.ent_subject = ttk.Entry(form_frame, font=("Garamond", 13, "bold"), style="Grey.TEntry")
-        self.ent_subject.grid(row=1, column=1, padx=5, pady=5)
-        
-        date_frame = tk.Frame(form_frame, bg=self.bg_sand)
-        date_frame.grid(row=1, column=2, padx=5, pady=5)
+        date_frame = ctk.CTkFrame(center_input_frame, fg_color="transparent")
+        date_frame.grid(row=1, column=2, padx=10)
         
         current_year = datetime.now().year
-        self.cbo_day = ttk.Combobox(date_frame, values=[f"{d:02d}" for d in range(1, 32)], state="readonly", width=3, font=("Garamond", 12, "bold"))
-        self.cbo_month = ttk.Combobox(date_frame, values=[f"{m:02d}" for m in range(1, 13)], state="readonly", width=3, font=("Garamond", 12, "bold"))
-        self.cbo_year = ttk.Combobox(date_frame, values=[str(y) for y in range(current_year, current_year+5)], state="readonly", width=5, font=("Garamond", 12, "bold"))
+        self.cbo_day = ctk.CTkComboBox(date_frame, values=[f"{d:02d}" for d in range(1, 32)], state="readonly", width=65, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, button_color=self.rolex_green, border_width=0, corner_radius=15)
+        self.cbo_month = ctk.CTkComboBox(date_frame, values=[f"{m:02d}" for m in range(1, 13)], state="readonly", width=65, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, button_color=self.rolex_green, border_width=0, corner_radius=15)
+        self.cbo_year = ctk.CTkComboBox(date_frame, values=[str(y) for y in range(current_year, current_year+5)], state="readonly", width=85, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, button_color=self.rolex_green, border_width=0, corner_radius=15)
         
         self.cbo_day.pack(side="left")
-        ttk.Label(date_frame, text="-", font=("Garamond", 15, "bold")).pack(side="left")
+        ctk.CTkLabel(date_frame, text=" / ", font=("Garamond", 15, "bold"), text_color=self.text_dark).pack(side="left")
         self.cbo_month.pack(side="left")
-        ttk.Label(date_frame, text="-", font=("Garamond", 15, "bold")).pack(side="left")
+        ctk.CTkLabel(date_frame, text=" / ", font=("Garamond", 15, "bold"), text_color=self.text_dark).pack(side="left")
         self.cbo_year.pack(side="left")
         
-        self.cbo_priority = ttk.Combobox(form_frame, values=["Low", "Medium", "High"], state="readonly", width=10, font=("Garamond", 13, "bold"))
-        self.cbo_priority.grid(row=1, column=3, padx=5, pady=5)
+        self.cbo_priority = ctk.CTkComboBox(center_input_frame, values=["Low", "Medium", "High"], state="readonly", width=120, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, button_color=self.rolex_green, border_width=0, corner_radius=15)
+        self.cbo_priority.grid(row=1, column=3, padx=10)
         
-        self.cbo_status = ttk.Combobox(form_frame, values=["Pending", "Completed"], state="readonly", width=10, font=("Garamond", 13, "bold"))
-        self.cbo_status.grid(row=1, column=4, padx=5, pady=5)
+        self.cbo_status = ctk.CTkComboBox(center_input_frame, values=["Pending", "Completed"], state="readonly", width=120, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, button_color=self.rolex_green, border_width=0, corner_radius=15)
+        self.cbo_status.grid(row=1, column=4, padx=10)
 
-       
-        btn_frame = tk.Frame(self, bg=self.bg_sand)
-        btn_frame.pack(pady=15)
+        # Buttons Center Aligned
+        btn_frame = ctk.CTkFrame(form_card, fg_color="transparent")
+        btn_frame.pack(pady=(25, 5))
         
-        self.btn_add = ttk.Button(btn_frame, text="Add Task")
-        self.btn_add.grid(row=0, column=0, padx=10)
+        self.btn_add = ctk.CTkButton(btn_frame, text="Add Task", font=("Garamond", 15, "bold"), fg_color=self.rolex_green, text_color=self.rolex_gold, hover_color=self.rolex_hover, corner_radius=20, width=140)
+        self.btn_add.pack(side="left", padx=10)
         
-        self.btn_update = ttk.Button(btn_frame, text="Update Selected")
-        self.btn_update.grid(row=0, column=1, padx=10)
+        self.btn_update = ctk.CTkButton(btn_frame, text="Update Selected", font=("Garamond", 15, "bold"), fg_color=self.rolex_green, text_color=self.rolex_gold, hover_color=self.rolex_hover, corner_radius=20, width=140)
+        self.btn_update.pack(side="left", padx=10)
         
-        self.btn_delete = ttk.Button(btn_frame, text="Delete Selected")
-        self.btn_delete.grid(row=0, column=2, padx=10)
+        self.btn_delete = ctk.CTkButton(btn_frame, text="Delete Selected", font=("Garamond", 15, "bold"), fg_color=self.rolex_green, text_color=self.rolex_gold, hover_color=self.rolex_hover, corner_radius=20, width=140)
+        self.btn_delete.pack(side="left", padx=10)
         
-        self.btn_clear = ttk.Button(btn_frame, text="Clear Form")
-        self.btn_clear.grid(row=0, column=3, padx=10)
+        self.btn_clear = ctk.CTkButton(btn_frame, text="Clear Form", font=("Garamond", 15, "bold"), fg_color=self.rolex_green, text_color=self.rolex_gold, hover_color=self.rolex_hover, corner_radius=20, width=140)
+        self.btn_clear.pack(side="left", padx=10)
 
+        # --- LIST & FILTER CARD ---
+        list_card = ctk.CTkFrame(main_container, fg_color=self.card_bg, corner_radius=25)
+        list_card.pack(fill="both", expand=True, ipadx=20, ipady=15)
+
+        # Center aligned the filters 
+        filter_frame = ctk.CTkFrame(list_card, fg_color="transparent")
+        filter_frame.pack(pady=(0, 15))
         
-        filter_frame = tk.Frame(self, bg=self.bg_sand)
-        filter_frame.pack(fill="x", pady=5)
-        
-        ttk.Label(filter_frame, text="Filter By Status:", font=("Garamond", 15, "bold")).pack(side="left")
-        self.filter_status = ttk.Combobox(filter_frame, values=["All", "Pending", "Completed"], state="readonly", width=10, font=("Garamond", 13, "bold"))
+        ctk.CTkLabel(filter_frame, text="Filter Status:", font=("Garamond", 15, "bold"), text_color=self.rolex_green).pack(side="left")
+        self.filter_status = ctk.CTkComboBox(filter_frame, values=["All", "Pending", "Completed"], state="readonly", width=120, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, button_color=self.rolex_green, border_width=0, corner_radius=15)
         self.filter_status.set("All")
-        self.filter_status.pack(side="left", padx=5)
+        self.filter_status.pack(side="left", padx=10)
         
-        ttk.Label(filter_frame, text="Filter By Priority:", font=("Garamond", 15, "bold")).pack(side="left", padx=(15, 0))
-        self.filter_priority = ttk.Combobox(filter_frame, values=["All", "Low", "Medium", "High"], state="readonly", width=10, font=("Garamond", 13, "bold"))
+        ctk.CTkLabel(filter_frame, text="Filter Priority:", font=("Garamond", 15, "bold"), text_color=self.rolex_green).pack(side="left", padx=(20, 0))
+        self.filter_priority = ctk.CTkComboBox(filter_frame, values=["All", "Low", "Medium", "High"], state="readonly", width=120, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, button_color=self.rolex_green, border_width=0, corner_radius=15)
         self.filter_priority.set("All")
-        self.filter_priority.pack(side="left", padx=5)
-
+        self.filter_priority.pack(side="left", padx=10)
         
+        ctk.CTkLabel(filter_frame, text="Sort By:", font=("Garamond", 15, "bold"), text_color=self.rolex_green).pack(side="left", padx=(20, 0))
+        self.sort_by = ctk.CTkComboBox(filter_frame, values=["Deadline", "Priority (High to Low)", "Priority (Low to High)"], state="readonly", width=190, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, button_color=self.rolex_green, border_width=0, corner_radius=15)
+        self.sort_by.set("Deadline")
+        self.sort_by.pack(side="left", padx=10)
+
         columns = ("ID", "Name", "Subject", "Deadline", "Priority", "Status")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=10)
+        self.tree = ttk.Treeview(list_card, columns=columns, show="headings")
         
         for col in columns:
             self.tree.heading(col, text=col)
@@ -218,15 +226,14 @@ class TaskView(tk.Tk):
             
         self.tree.column("ID", width=0, stretch=tk.NO) 
         
-        self.tree.tag_configure("evenrow", background=self.row_light_sand)
-        self.tree.tag_configure("oddrow", background=self.row_light_grey)
-        
+        self.tree.tag_configure("evenrow", background=self.row_even)
+        self.tree.tag_configure("oddrow", background=self.row_odd)
         
         self.tree.tag_configure("urgent", foreground=self.burgundy)
         self.tree.tag_configure("completed", foreground=self.dark_cyan)
         self.tree.tag_configure("normal", foreground=self.text_dark)
 
-        self.tree.pack(fill="both", expand=True, pady=10)
+        self.tree.pack(fill="both", expand=True)
 
     def clear_inputs(self):
         self.ent_name.delete(0, tk.END)
@@ -249,21 +256,22 @@ class TaskView(tk.Tk):
             return ""
         return f"{year}-{month}-{day}"
 
-
 class TaskController:
     def __init__(self, model, view):
         self.model = model
         self.view = view
         self.closest_deadline_dt = None
 
-        self.view.btn_add.config(command=self.add_task)
-        self.view.btn_update.config(command=self.update_task)
-        self.view.btn_delete.config(command=self.delete_task)
-        self.view.btn_clear.config(command=self.clear_and_refresh)
+        self.view.btn_add.configure(command=self.add_task)
+        self.view.btn_update.configure(command=self.update_task)
+        self.view.btn_delete.configure(command=self.delete_task)
+        self.view.btn_clear.configure(command=self.clear_and_refresh)
         
         self.view.ent_search.bind("<KeyRelease>", lambda e: self.refresh_list())
-        self.view.filter_status.bind("<<ComboboxSelected>>", lambda e: self.refresh_list())
-        self.view.filter_priority.bind("<<ComboboxSelected>>", lambda e: self.refresh_list())
+        
+        self.view.filter_status.configure(command=lambda e: self.refresh_list())
+        self.view.filter_priority.configure(command=lambda e: self.refresh_list())
+        self.view.sort_by.configure(command=lambda e: self.refresh_list())
         
         self.view.tree.bind("<Double-1>", self.load_selected_to_form)
 
@@ -277,7 +285,7 @@ class TaskController:
             time_diff = self.closest_deadline_dt - now
 
             if time_diff.total_seconds() < 0:
-                self.view.lbl_countdown.config(text="Time left until next deadline: OVERDUE!", foreground=self.view.burgundy)
+                self.view.lbl_countdown.configure(text="Next deadline: OVERDUE!", text_color=self.view.burgundy)
             else:
                 days = time_diff.days
                 seconds = time_diff.seconds
@@ -287,9 +295,9 @@ class TaskController:
                 
                 countdown_str = f"{days}d {hours}h {minutes}m {secs}s"
                 color = self.view.burgundy if days <= 7 else self.view.rolex_green
-                self.view.lbl_countdown.config(text=f"Time left until next deadline: {countdown_str}", foreground=color)
+                self.view.lbl_countdown.configure(text=f"Next deadline in: {countdown_str}", text_color=color)
         else:
-            self.view.lbl_countdown.config(text="Time left until next deadline: None", foreground=self.view.rolex_green)
+            self.view.lbl_countdown.configure(text="Next deadline: None", text_color=self.view.rolex_green)
             
         self.view.after(1000, self.update_countdown)
 
@@ -378,8 +386,9 @@ class TaskController:
         status_f = self.view.filter_status.get()
         priority_f = self.view.filter_priority.get()
         search_f = self.view.ent_search.get().strip()
+        sort_option = self.view.sort_by.get() 
         
-        tasks = self.model.get_tasks(status_f, priority_f, search_f)
+        tasks = self.model.get_tasks(status_f, priority_f, search_f, sort_option)
         
         today = datetime.now()
         total = len(tasks)
@@ -410,8 +419,8 @@ class TaskController:
 
             self.view.tree.insert("", tk.END, values=display_task, tags=(row_bg_tag, status_fg_tag))
 
-        self.view.lbl_total.config(text=f"Total Tasks: {total}")
-        self.view.lbl_completed.config(text=f"Completed: {completed_count}")
+        self.view.lbl_total.configure(text=f"Total Tasks: {total}")
+        self.view.lbl_completed.configure(text=f"Completed: {completed_count}")
         
         if upcoming_deadlines:
             next_due_date = min(upcoming_deadlines)
