@@ -9,7 +9,7 @@ A modern, native desktop application for students to track, prioritize, and mana
 ## Overview
 **Context & Purpose:** University students frequently struggle to balance competing deadlines across multiple modules, they might even occasionally miss a test or a submission. Standard to-do lists fail to capture the nuances of academic triage     (e.g., sorting by priority vs. sorting by closest deadline). **Smart-Task** solves this academic pain point by providing a high-visibility dashboard with a live countdown engine and strict structural sorting, ensuring students never miss an impending deadline.
 
-![Dashboard screenshot](docs/screenshots/dashboard.png) *(Note to assessor: Please run the app to view the live GUI)*
+![Dashboard screenshot](https://docs.google.com/document/d/14pQuYu88U2j58z4OUVgbt0B1qjrsMPRwMXOd8BsCoBk/edit?usp=sharing) *(Note to assessor: Please run the app to view the live GUI)*
 
 ## Features
 * **Live Deadline Tracking:** Real-time countdown engine calculates days, hours, and minutes until the closest impending deadline.
