@@ -14,7 +14,7 @@ A modern, native desktop application for students to track, prioritize, and mana
 
 ## Features
 * **Live Deadline Tracking:** Real-time countdown engine calculates days, hours, and minutes until the closest impending deadline.
-* * **Live Deadline Tracking:** Color coded headlines next to tasks to show task status.
+* **Status Indicator:** Color coded headlines next to tasks to show task status.
 * **Smart Sorting & Filtering:** Dynamically filter tasks by completion status or priority, and sort logically using SQL `CASE` weighting.
 * **Persistent Storage:** Local SQLite database ensures data is safely stored across sessions without the need for an internet connection.
 * **Automated Data Formatting:** Auto-capitalization of inputs and localized date masking (displaying `DD-MM-YYYY` while storing machine-readable `YYYY-MM-DD`).
