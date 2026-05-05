@@ -1,0 +1,27 @@
+def update_countdown(self):
+        """
+        Calculate and update the live countdown to the closest pending deadline.
+
+        Runs asynchronously on a 1-second interval loop. Adjusts text color
+        to Burgundy if the deadline is 7 days or less away.
+        """
+        if self.closest_deadline_dt:
+            now = datetime.now()
+            time_diff = self.closest_deadline_dt - now
+
+            if time_diff.total_seconds() < 0:
+                self.view.lbl_countdown.configure(text="Next deadline: OVERDUE!", text_color=self.view.burgundy)
+            else:
+                days = time_diff.days
+                seconds = time_diff.seconds
+                hours = seconds // 3600
+                minutes = (seconds % 3600) // 60
+                secs = seconds % 60
+                
+                countdown_str = f"{days}d {hours}h {minutes}m {secs}s"
+                color = self.view.burgundy if days <= 7 else self.view.rolex_green
+                self.view.lbl_countdown.configure(text=f"Next deadline in: {countdown_str}", text_color=color)
+        else:
+            self.view.lbl_countdown.configure(text="Next deadline: None", text_color=self.view.rolex_green)
+            
+        self.view.after(1000, self.update_countdown)
