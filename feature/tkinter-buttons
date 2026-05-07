@@ -1,0 +1,9 @@
+# The Inputs
+        self.ent_name = ctk.CTkEntry(center_input_frame, width=150)
+        self.ent_subject = ctk.CTkEntry(center_input_frame, width=150)
+        
+        # The Buttons
+        self.btn_add = ctk.CTkButton(btn_frame, text="Add Task", width=140)
+        self.btn_update = ctk.CTkButton(btn_frame, text="Update Selected", width=140)
+        self.btn_delete = ctk.CTkButton(btn_frame, text="Delete Selected", width=140)
+        self.btn_clear = ctk.CTkButton(btn_frame, text="Clear Form", width=140)
