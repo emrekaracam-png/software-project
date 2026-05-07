@@ -12,6 +12,10 @@ from tkinter import ttk, messagebox
 import sqlite3
 from datetime import datetime
 
+# =========================================
+# DATABASE MODEL
+# Handles SQLite task storage and queries
+# =========================================
 
 class TaskModel:
     """
@@ -139,6 +143,10 @@ class TaskModel:
         return cursor.fetchall()
 
 
+# =========================================
+# USER INTERFACE / VIEW
+# Builds and manages the CustomTkinter GUI
+# =========================================
 
 class TaskView(ctk.CTk):
     """
@@ -340,6 +348,11 @@ class TaskView(ctk.CTk):
         if not year or not month or not day:
             return ""
         return f"{year}-{month}-{day}"
+
+# =========================================
+# APPLICATION CONTROLLER
+# Connects UI interactions with database logic
+# =========================================
 
 class TaskController:
     """
@@ -559,6 +572,9 @@ class TaskController:
         else:
             self.closest_deadline_dt = None
 
+# =========================================
+# APPLICATION ENTRY POINT
+# =========================================
 
 if __name__ == "__main__":
     db = TaskModel()
