@@ -1,0 +1,39 @@
+def get_tasks(self, status_filter="All", priority_filter="All", search_term="", sort_by="Deadline"):
+        """
+        Retrieve a filtered and sorted list of tasks from the database.
+
+        Applies SQL CASE weighting to sort text-based priorities logically 
+        rather than alphabetically.
+
+        Args:
+            status_filter (str): Filter by 'Pending', 'Completed', or 'All'.
+            priority_filter (str): Filter by 'High', 'Medium', 'Low', or 'All'.
+            search_term (str): Partial text match for the task name.
+            sort_by (str): The column/logic to order the results by.
+
+        Returns:
+            list[tuple]: A list of tuples containing the matched task records.
+        """
+        cursor = self.conn.cursor()
+        query = "SELECT * FROM tasks WHERE 1=1"
+        params = []
+        
+        if status_filter != "All":
+            query += " AND status=?"
+            params.append(status_filter)
+        if priority_filter != "All":
+            query += " AND priority=?"
+            params.append(priority_filter)
+        if search_term:
+            query += " AND task_name LIKE ?"
+            params.append(f"%{search_term}%")
+            
+        if sort_by == "Priority (High to Low)":
+            query += " ORDER BY CASE priority WHEN 'High' THEN 3 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 1 END DESC, deadline ASC"
+        elif sort_by == "Priority (Low to High)":
+            query += " ORDER BY CASE priority WHEN 'High' THEN 3 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 1 END ASC, deadline ASC"
+        else:
+            query += " ORDER BY deadline ASC"
+            
+        cursor.execute(query, params)
+        return cursor.fetchall()
