@@ -1,0 +1,9 @@
+        header_frame = ctk.CTkFrame(main_container, fg_color=self.rolex_green, corner_radius=25)
+        header_frame.pack(fill="x", pady=(0, 20), ipadx=15, ipady=10)
+
+        dash_card = ctk.CTkFrame(main_container, fg_color=self.card_bg, corner_radius=25)
+        dash_card.pack(fill="x", pady=(0, 20), ipadx=20, ipady=15)
+        
+       
+        self.btn_add.configure(corner_radius=20)
+        self.btn_update.configure(corner_radius=20)
