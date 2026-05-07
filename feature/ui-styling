@@ -1,0 +1,12 @@
+# --- PREMIUM COLOR PALETTE ---
+        self.bg_sand = "#E8DCC4"       
+        self.card_bg = "#FFFFFF"       
+        self.rolex_green = "#006039"   
+        self.rolex_gold = "#B59A5A" 
+        self.rolex_hover = "#004528"   
+        self.dark_cyan = "#008B8B"     
+        self.burgundy = "#800020"      
+        self.entry_bg = "#F2F2F2"      
+        self.text_dark = "#111111"
+        
+        self.configure(fg_color=self.bg_sand)
