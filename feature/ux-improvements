@@ -1,0 +1,8 @@
+
+        ctk.CTkLabel(dash_card, text="Dashboard Summary", font=("Garamond", 22, "bold"), text_color=self.rolex_green).pack(pady=(0, 15))
+        
+        
+        self.row_even = "#FAFAFA"
+        self.row_odd = "#F0F0F0" 
+        self.tree.tag_configure("evenrow", background=self.row_even)
+        self.tree.tag_configure("oddrow", background=self.row_odd)
