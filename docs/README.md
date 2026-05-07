@@ -9,6 +9,8 @@ A modern, native desktop application for students to track, prioritize, and mana
 ## Overview
 **Context & Purpose:** University students frequently struggle to balance competing deadlines across multiple modules, they might even occasionally miss a test or a submission. Standard to-do lists fail to capture the nuances of academic triage (e.g., sorting by priority vs. sorting by closest deadline). **Smart-Task** solves this academic pain point by providing a high-visibility dashboard with a live countdown engine and strict structural sorting, ensuring students never miss an impending deadline.
 
+The application follows a Model-View-Controller (MVC) architecture to separate database operations, graphical interface rendering, and application control flow.
+
 <img width="1070" height="850" alt="dashboard" src="https://github.com/user-attachments/assets/57a433ad-f65a-4e6e-a27c-e9420e633e59" />
 *(Note to assessor: Please run the app to view the live GUI)*
 
@@ -34,10 +36,14 @@ This project requires Python 3.9 or newer. It utilizes the `customtkinter` libra
 3. Install required dependencies:
    pip install customtkinter
 
-### Running the Application
-Run the main application file:
+#### Running the Application
+Navigate to the Final Code folder:
 
-   python main.py
+   cd "Final Code"
+
+Run the application:
+
+   python Smart-Task.py
 
 If the command does not work, ensure you are in the correct directory and that Python is installed correctly.
 
