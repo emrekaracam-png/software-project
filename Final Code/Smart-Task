@@ -12,10 +12,8 @@ from tkinter import ttk, messagebox
 import sqlite3
 from datetime import datetime
 
-# =========================================
-# DATABASE MODEL
-# Handles SQLite task storage and queries
-# =========================================
+# DATABASE MODEL Handles SQLite task storage and queries
+
 
 class TaskModel:
     """
@@ -143,10 +141,10 @@ class TaskModel:
         return cursor.fetchall()
 
 
-# =========================================
+
 # USER INTERFACE / VIEW
 # Builds and manages the CustomTkinter GUI
-# =========================================
+
 
 class TaskView(ctk.CTk):
     """
@@ -166,7 +164,7 @@ class TaskView(ctk.CTk):
         self.title("Smart-Task Academic Manager")
         self.geometry("1100x800")
         
-        # --- PREMIUM COLOR PALETTE ---
+       
         self.bg_sand = "#E8DCC4"       
         self.card_bg = "#FFFFFF"       
         self.rolex_green = "#006039"   
@@ -197,7 +195,7 @@ class TaskView(ctk.CTk):
         main_container = ctk.CTkFrame(self, fg_color=self.bg_sand)
         main_container.pack(fill="both", expand=True, padx=25, pady=25)
 
-        # --- TOP HEADER & SEARCH BAR ---
+        #TOP HEADER & SEARCH BAR
         header_frame = ctk.CTkFrame(main_container, fg_color=self.rolex_green, corner_radius=25)
         header_frame.pack(fill="x", pady=(0, 20), ipadx=15, ipady=10)
         
@@ -209,7 +207,7 @@ class TaskView(ctk.CTk):
         self.ent_search = ctk.CTkEntry(search_frame, width=200, font=("Garamond", 14, "bold"), fg_color=self.entry_bg, text_color=self.text_dark, border_width=0, corner_radius=15)
         self.ent_search.pack(side="left")
 
-        # --- DASHBOARD CARD ---
+        #DASHBOARD CARD 
         dash_card = ctk.CTkFrame(main_container, fg_color=self.card_bg, corner_radius=25)
         dash_card.pack(fill="x", pady=(0, 20), ipadx=20, ipady=15)
         
@@ -227,7 +225,7 @@ class TaskView(ctk.CTk):
         self.lbl_countdown = ctk.CTkLabel(stats_frame, text="Next deadline: None", font=("Garamond", 16, "bold"), text_color=self.text_dark)
         self.lbl_countdown.pack(side="left", expand=True)
 
-        # --- TASK MANAGEMENT CARD ---
+        #TASK MANAGEMENT CARD
         form_card = ctk.CTkFrame(main_container, fg_color=self.card_bg, corner_radius=25)
         form_card.pack(fill="x", pady=(0, 20), ipadx=20, ipady=15)
         
@@ -281,7 +279,7 @@ class TaskView(ctk.CTk):
         self.btn_clear = ctk.CTkButton(btn_frame, text="Clear Form", font=("Garamond", 15, "bold"), fg_color=self.rolex_green, text_color=self.rolex_gold, hover_color=self.rolex_hover, corner_radius=20, width=140)
         self.btn_clear.pack(side="left", padx=10)
 
-        # --- LIST & FILTER CARD ---
+        #LIST & FILTER CARD
         list_card = ctk.CTkFrame(main_container, fg_color=self.card_bg, corner_radius=25)
         list_card.pack(fill="both", expand=True, ipadx=20, ipady=15)
 
@@ -349,10 +347,9 @@ class TaskView(ctk.CTk):
             return ""
         return f"{year}-{month}-{day}"
 
-# =========================================
-# APPLICATION CONTROLLER
-# Connects UI interactions with database logic
-# =========================================
+
+# APPLICATION CONTROLLER Connects UI interactions with database logic
+
 
 class TaskController:
     """
@@ -572,9 +569,8 @@ class TaskController:
         else:
             self.closest_deadline_dt = None
 
-# =========================================
+
 # APPLICATION ENTRY POINT
-# =========================================
 
 if __name__ == "__main__":
     db = TaskModel()
